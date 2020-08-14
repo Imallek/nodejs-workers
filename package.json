@@ -1,0 +1,22 @@
+{
+  "name": "nodejs-workers",
+  "version": "1.0.0",
+  "description": "Inside the repo you can find a backup folder. The folder has users dump. The `lastActivity` field contains the timestamp \r of the users last activity. Use this time to check for how long the user has been inactive.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/masoodtalha/nodejs-workers.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/masoodtalha/nodejs-workers/issues"
+  },
+  "homepage": "https://github.com/masoodtalha/nodejs-workers#readme",
+  "dependencies": {
+    "mongodb": "^3.6.0"
+  }
+}
