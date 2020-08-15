@@ -20,7 +20,6 @@ async function updateLastActivityOfDocuments(db, array) {
   for (let i = 10; i > 0; i--) {
     let documentIndexToModify = getRandomNumber(i);
     let queryDoc = array.splice(documentIndexToModify, 1)[0];
-    // console.log("DOCUMENT:  ", queryDoc);
     await modifyLastActivityTime(db, queryDoc, getRandomNumber(4, 1));
   }
 }
@@ -28,23 +27,21 @@ async function updateLastActivityOfDocuments(db, array) {
 async function getUpdatedActivityofDocuments(db, array) {
   let docs = await db
     .find({ email: { $in: array } })
-    .project({ email: 1, "meta.lastLogin": 1 });
+    .project({ email: 1, "meta.lastActivity": 1 });
   docs.forEach((item) => console.log(item));
 }
 
 async function modifyLastActivityTime(db, docEmail, minutes) {
-  //   console.log("DOC EMAIL: ", docEmail);
-  //   console.log("Minutes: ", minutes);
   let updatedData = await db.updateOne(
     { email: docEmail },
     {
       $set: {
-        "meta.lastLogin": new Date(new Date().getTime() - minutes * 60 * 1000),
+        "meta.lastActivity": new Date(
+          new Date().getTime() - minutes * 60 * 1000
+        ),
       },
     }
   );
-  //   let data = await db.findOne({ email: docEmail });
-  //   console.log("Update Data: ", data.meta.lastLogin);
 }
 
 function getRandomNumber(size, base) {
