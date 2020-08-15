@@ -4,6 +4,18 @@ var url = "mongodb://localhost:27017/";
 const DB_NAME = "CreativeMorph";
 const COLLECTION_NAME = "Users";
 const SAMPLE_SIZE = 10;
+const latestBounds_2minutes = {
+  lowerTimeBound: "",
+  upperTimeBound: "",
+};
+const latestBounds_3minutes = {
+  lowerTimeBound: "",
+  upperTimeBound: "",
+};
+const latestBounds_5minutes = {
+  lowerTimeBound: "",
+  upperTimeBound: "",
+};
 const LastActivityLessThan_5minutes = [];
 const LastActivityLessThan_3minutes = [];
 const LastActivityLessThan_2minutes = [];
@@ -18,19 +30,25 @@ MongoClient.connect(url, { useUnifiedTopology: true }, async function (
   await updateLastActivityOfDocuments(dbo, [...emails]);
   //   await getUpdatedActivityofDocuments(dbo, [...emails]);
   await classifyDocsOverLastActivity(dbo, [2, 3, 5]);
-  console.log(
-    "Users having last Activity is b/w 1-2 minutes, (Check other Arrays for 2-3 and 4-5 minutes Users)",
-    LastActivityLessThan_2minutes
-  );
+  printOutput(latestBounds_2minutes, LastActivityLessThan_2minutes);
 
   setInterval(async () => {
     await classifyDocsOverLastActivity(dbo, [2, 3, 5]);
-    console.log(
-      "Users having last Activity is b/w 1-2 minutes, (Check other Arrays for 2-3 and 4-5 minutes Users)",
-      LastActivityLessThan_2minutes
-    );
+    printOutput(latestBounds_2minutes, LastActivityLessThan_2minutes);
   }, 5 * 60 * 1000);
 });
+
+function printOutput(bounds, outputArray) {
+  console.log(
+    "Users having last Activity is b/w 1-2 minutes, (Check other Arrays for 2-3 and 4-5 minutes Users)\n",
+    "Latest Time Bounds with Data:\n",
+    "\n------------ Time Bounds ----------------\n",
+    bounds,
+    "\n-------------- Data --------------\n",
+    outputArray,
+    "\n=====================================\n"
+  );
+}
 
 async function updateLastActivityOfDocuments(db, array) {
   for (let i = 10; i > 0; i--) {
@@ -87,33 +105,60 @@ async function classifyDocsOverLastActivity(db, minutesArray) {
     db,
     minutesArray[0] - 1,
     minutesArray[0],
-    LastActivityLessThan_2minutes
+    LastActivityLessThan_2minutes,
+    latestBounds_2minutes
   );
   await classifyDocs(
     db,
     minutesArray[1] - 1,
     minutesArray[1],
-    LastActivityLessThan_3minutes
+    LastActivityLessThan_3minutes,
+    latestBounds_3minutes
   );
   await classifyDocs(
     db,
     minutesArray[2] - 1,
     minutesArray[2],
-    LastActivityLessThan_5minutes
+    LastActivityLessThan_5minutes,
+    latestBounds_5minutes
   );
 }
 
-async function classifyDocs(db, minutesLower, minutesUpper, store) {
-  let documents = await db
-    .find({
-      "meta.lastActivity": {
-        $gte: new Date(new Date().getTime() - minutesUpper * 60 * 1000),
-        $lt: new Date(new Date().getTime() - minutesLower * 60 * 1000),
+async function classifyDocs(
+  db,
+  minutesLower,
+  minutesUpper,
+  store,
+  latestBoundsStorage
+) {
+  let lowerTimeBound = new Date(
+    new Date().getTime() - minutesUpper * 60 * 1000
+  );
+  let upperTimeBound = new Date(
+    new Date().getTime() - minutesLower * 60 * 1000
+  );
+  saveLatestBounds(latestBoundsStorage, lowerTimeBound, upperTimeBound);
+
+  let documents = await db.aggregate([
+    {
+      $project: { email: 1, "meta.lastActivity": 1 },
+    },
+    {
+      $match: {
+        "meta.lastActivity": {
+          $gte: lowerTimeBound,
+          $lte: upperTimeBound,
+        },
       },
-    })
-    .project({ email: 1, "meta.lastActivity": 1 });
+    },
+  ]);
 
   await documents.forEach((item) => {
     store.push(item);
   });
+}
+
+function saveLatestBounds(latestBoundsStorage, lowerTimeBound, upperTimeBound) {
+  latestBoundsStorage.lowerTimeBound = lowerTimeBound;
+  latestBoundsStorage.upperTimeBound = upperTimeBound;
 }
