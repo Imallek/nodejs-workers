@@ -4,6 +4,9 @@ var url = "mongodb://localhost:27017/";
 const DB_NAME = "CreativeMorph";
 const COLLECTION_NAME = "Users";
 const SAMPLE_SIZE = 10;
+const LastActivityLessThan_5minutes = [];
+const LastActivityLessThan_3minutes = [];
+const LastActivityLessThan_2minutes = [];
 
 MongoClient.connect(url, { useUnifiedTopology: true }, async function (
   err,
@@ -13,7 +16,20 @@ MongoClient.connect(url, { useUnifiedTopology: true }, async function (
   const dbo = db.db(DB_NAME).collection(COLLECTION_NAME);
   let emails = await getRandomSample(dbo, SAMPLE_SIZE);
   await updateLastActivityOfDocuments(dbo, [...emails]);
-  await getUpdatedActivityofDocuments(dbo, [...emails]);
+  //   await getUpdatedActivityofDocuments(dbo, [...emails]);
+  await classifyDocsOverLastActivity(dbo, [2, 3, 5]);
+  console.log(
+    "Users having last Activity is b/w 1-2 minutes, (Check other Arrays for 3-4 and 4-5 minutes Users)",
+    LastActivityLessThan_2minutes
+  );
+
+  setInterval(async () => {
+    await classifyDocsOverLastActivity(dbo, [2, 3, 5]);
+    console.log(
+      "Users having last Activity is b/w 1-2 minutes, (Check other Arrays for 3-4 and 4-5 minutes Users)",
+      LastActivityLessThan_2minutes
+    );
+  }, 5 * 60 * 1000);
 });
 
 async function updateLastActivityOfDocuments(db, array) {
@@ -64,4 +80,40 @@ async function getRandomSample(db, sampleSize) {
     emails.push(user.email);
   }
   return emails;
+}
+
+async function classifyDocsOverLastActivity(db, minutesArray) {
+  await classifyDocs(
+    db,
+    minutesArray[0] - 1,
+    minutesArray[0],
+    LastActivityLessThan_2minutes
+  );
+  await classifyDocs(
+    db,
+    minutesArray[1] - 1,
+    minutesArray[1],
+    LastActivityLessThan_3minutes
+  );
+  await classifyDocs(
+    db,
+    minutesArray[2] - 1,
+    minutesArray[2],
+    LastActivityLessThan_5minutes
+  );
+}
+
+async function classifyDocs(db, minutesLower, minutesUpper, store) {
+  let documents = await db
+    .find({
+      "meta.lastActivity": {
+        $gte: new Date(new Date().getTime() - minutesUpper * 60 * 1000),
+        $lt: new Date(new Date().getTime() - minutesLower * 60 * 1000),
+      },
+    })
+    .project({ email: 1, "meta.lastActivity": 1 });
+
+  await documents.forEach((item) => {
+    store.push(item);
+  });
 }
