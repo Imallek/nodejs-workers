@@ -19,14 +19,14 @@ MongoClient.connect(url, { useUnifiedTopology: true }, async function (
   //   await getUpdatedActivityofDocuments(dbo, [...emails]);
   await classifyDocsOverLastActivity(dbo, [2, 3, 5]);
   console.log(
-    "Users having last Activity is b/w 1-2 minutes, (Check other Arrays for 3-4 and 4-5 minutes Users)",
+    "Users having last Activity is b/w 1-2 minutes, (Check other Arrays for 2-3 and 4-5 minutes Users)",
     LastActivityLessThan_2minutes
   );
 
   setInterval(async () => {
     await classifyDocsOverLastActivity(dbo, [2, 3, 5]);
     console.log(
-      "Users having last Activity is b/w 1-2 minutes, (Check other Arrays for 3-4 and 4-5 minutes Users)",
+      "Users having last Activity is b/w 1-2 minutes, (Check other Arrays for 2-3 and 4-5 minutes Users)",
       LastActivityLessThan_2minutes
     );
   }, 5 * 60 * 1000);
